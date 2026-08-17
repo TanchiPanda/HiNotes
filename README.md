@@ -1,5 +1,5 @@
-# 📒R6T5Notes - 开源的备忘录与笔记工具【Pre-release】
-在线体验：https://tanchipanda.github.io/R6T5Notes/index.html
+# 📒TanchiNotes - 开源的备忘录与笔记工具【Pre-release】
+在线体验：https://tanchipanda.github.io/TanchiNotes/index.html
 
 ## 🕯️功能亮点
 1️⃣支持 MarkDown 代码，提供双栏、写作视图和阅读视图三种模式
