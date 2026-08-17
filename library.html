@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>模板库 - 备忘录</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+      background: hsl(40, 20%, 97%);
+      color: hsl(30, 10%, 15%);
+      min-height: 100vh;
+    }
+    .page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .back-btn {
+      width: 36px; height: 36px;
+      border: 1px solid hsl(35, 15%, 88%);
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      color: hsl(30, 6%, 45%);
+      text-decoration: none;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .back-btn:hover {
+      background: hsl(35, 20%, 94%);
+      color: hsl(30, 10%, 15%);
+    }
+    .page-header h1 {
+      font-size: 22px;
+      font-weight: 600;
+    }
+    .page-header .count {
+      font-size: 13px;
+      color: hsl(30, 6%, 45%);
+      margin-left: auto;
+    }
+
+    /* 模板卡片 */
+    .template-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .template-card {
+      background: white;
+      border: 1px solid hsl(35, 15%, 88%);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .template-card:hover {
+      border-color: hsl(25, 55%, 48%, 0.3);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .template-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: hsl(35, 35%, 92%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .template-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .template-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .template-desc {
+      font-size: 13px;
+      color: hsl(30, 6%, 45%);
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+    .template-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .template-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: hsl(35, 35%, 92%);
+      color: hsl(25, 40%, 30%);
+    }
+    .template-tag.encrypted-tag {
+      background: hsl(25, 55%, 48%);
+      color: white;
+    }
+    .save-btn {
+      flex-shrink: 0;
+      padding: 8px 18px;
+      border: none;
+      border-radius: 8px;
+      background: hsl(25, 55%, 48%);
+      color: white;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+      align-self: center;
+    }
+    .save-btn:hover {
+      background: hsl(25, 55%, 42%);
+    }
+    .save-btn.saved {
+      background: hsl(140, 45%, 40%);
+      cursor: default;
+    }
+
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: hsl(30, 6%, 45%);
+    }
+    .empty-state .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+    .empty-state p {
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    .empty-state .hint {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+    .empty-state code {
+      background: hsl(35, 20%, 94%);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    /* 提示条 */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: hsl(30, 10%, 15%);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 100;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast a {
+      color: hsl(25, 60%, 65%);
+      text-decoration: underline;
+      margin-left: 8px;
+    }
+
+    /* 预览区 */
+    .preview-toggle {
+      font-size: 12px;
+      color: hsl(30, 6%, 45%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .preview-toggle:hover {
+      color: hsl(25, 55%, 48%);
+    }
+    .template-preview {
+      display: none;
+      margin-top: 10px;
+      padding: 12px;
+      background: hsl(35, 20%, 97%);
+      border-radius: 8px;
+      font-family: Consolas, "Source Code Pro", monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: hsl(30, 6%, 35%);
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .template-preview.open {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="page-header">
+      <a href="index.html" class="back-btn" title="返回">←</a>
+      <h1>📚 模板库</h1>
+      <span class="count" id="templateCount"></span>
+    </div>
+    <div class="template-list" id="templateList"></div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <!-- 模板数据 -->
+  <script src="sources/library/templates.js"></script>
+  <script>
+  (function() {
+    'use strict';
+
+    const STORAGE_KEYS = { TAGS: 'memo_app_tags', NOTES: 'memo_app_notes' };
+    const ENC_TAG_ID = 'tag-encrypted';
+
+    function load(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch(e) { return fallback; }
+    }
+    function save(key, val) {
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+    }
+    function uid(prefix) {
+      return prefix + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    }
+
+    const templates = window.TEMPLATES || [];
+    const listEl = document.getElementById('templateList');
+    const countEl = document.getElementById('templateCount');
+    const toastEl = document.getElementById('toast');
+
+    countEl.textContent = templates.length + ' 个模板';
+
+    function showToast(msg, withLink) {
+      toastEl.innerHTML = msg + (withLink ? '<a href="index.html">查看</a>' : '');
+      toastEl.classList.add('show');
+      setTimeout(() => toastEl.classList.remove('show'), 2500);
+    }
+
+    function esc(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function saveTemplateAsNote(tpl) {
+      const tags = load(STORAGE_KEYS.TAGS, []);
+      const notes = load(STORAGE_KEYS.NOTES, []);
+
+      // 确保加密标签存在
+      if (!tags.find(t => t.id === ENC_TAG_ID)) {
+        tags.unshift({ id: ENC_TAG_ID, name: '加密笔记本', protected: true, createdAt: Date.now() });
+      }
+
+      // 查找或创建标签
+      const tagIds = [];
+      (tpl.tags || []).forEach(tagName => {
+        if (tagName === '加密笔记本') {
+          tagIds.push(ENC_TAG_ID);
+          return;
+        }
+        let tag = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase());
+        if (!tag) {
+          tag = { id: uid('tag'), name: tagName, createdAt: Date.now() };
+          tags.push(tag);
+        }
+        tagIds.push(tag.id);
+      });
+
+      const now = Date.now();
+      const newNote = {
+        id: uid('note'),
+        title: tpl.title,
+        content: tpl.content,
+        tagIds: tagIds,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      notes.unshift(newNote);
+      save(STORAGE_KEYS.TAGS, tags);
+      save(STORAGE_KEYS.NOTES, notes);
+
+      return newNote;
+    }
+
+    if (templates.length === 0) {
+      listEl.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">📭</div>
+          <p>暂无模板</p>
+          <p class="hint">在 <code>sources/library/templates.js</code> 中添加模板</p>
+        </div>`;
+    } else {
+      const icons = ['📝', '📋', '📊', '📖', '🗂', '✅', '📌', '💡', '🎯', '🔖'];
+      templates.forEach((tpl, idx) => {
+        const card = document.createElement('div');
+        card.className = 'template-card';
+        const icon = icons[idx % icons.length];
+        const tagsHtml = (tpl.tags || []).map(t =>
+          `<span class="template-tag ${t === '加密笔记本' ? 'encrypted-tag' : ''}">${t === '加密笔记本' ? '🔒 ' : ''}${esc(t)}</span>`
+        ).join('');
+
+        card.innerHTML = `
+          <div class="template-icon">${icon}</div>
+          <div class="template-body">
+            <div class="template-title">${esc(tpl.title)}</div>
+            <div class="template-desc">${esc(tpl.description || '')}</div>
+            <div class="template-tags">${tagsHtml}</div>
+            <button class="preview-toggle" data-action="preview">预览内容</button>
+            <div class="template-preview">${esc(tpl.content)}</div>
+          </div>
+          <button class="save-btn" data-action="save">另存</button>
+        `;
+
+        // 预览切换
+        card.querySelector('[data-action="preview"]').onclick = (e) => {
+          const preview = card.querySelector('.template-preview');
+          const btn = e.target;
+          preview.classList.toggle('open');
+          btn.textContent = preview.classList.contains('open') ? '收起' : '预览内容';
+        };
+
+        // 另存
+        const saveBtn = card.querySelector('[data-action="save"]');
+        saveBtn.onclick = () => {
+          if (saveBtn.classList.contains('saved')) return;
+          saveTemplateAsNote(tpl);
+          saveBtn.textContent = '✓ 已保存';
+          saveBtn.classList.add('saved');
+          showToast('已存为备忘录「' + tpl.title + '」', true);
+          setTimeout(() => {
+            saveBtn.textContent = '另存';
+            saveBtn.classList.remove('saved');
+          }, 2000);
+        };
+
+        listEl.appendChild(card);
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
