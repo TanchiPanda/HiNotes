@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Markdown 笔记</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    if (window.marked && marked.setOptions) {
+      marked.setOptions({ breaks: true, gfm: true });
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+      background: hsl(40, 20%, 97%);
+      color: hsl(30, 10%, 15%);
+      height: 100vh;
+      overflow: hidden;
+    }
+    .app { display: flex; height: 100vh; }
+
+    /* ===== 侧边栏 ===== */
+    .sidebar {
+      width: 220px; flex-shrink: 0;
+      border-right: 1px solid hsl(35, 15%, 88%);
+      background: hsl(35, 20%, 94%);
+      display: flex; flex-direction: column;
+    }
+    .sidebar-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid hsl(35, 15%, 88%);
+    }
+    .sidebar-header h2 { font-size: 14px; font-weight: 600; }
+    .icon-btn {
+      width: 28px; height: 28px; border: none; background: transparent;
+      border-radius: 6px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      color: hsl(30, 6%, 45%); font-size: 16px;
+      transition: background 0.15s;
+    }
+    .icon-btn:hover { background: hsl(35, 35%, 92%); color: hsl(25, 40%, 30%); }
+    .tag-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .sidebar-footer {
+      border-top: 1px solid hsl(35, 15%, 88%);
+      padding: 6px 8px;
+      flex-shrink: 0;
+    }
+    .settings-link {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 6px; cursor: pointer;
+      font-size: 13px; color: hsl(30, 6%, 45%);
+      text-decoration: none; transition: background 0.15s;
+    }
+    .settings-link:hover { background: hsl(35, 35%, 92%); color: hsl(25, 40%, 30%); }
+    .tag-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 6px; cursor: pointer;
+      font-size: 14px; transition: background 0.15s;
+      margin-bottom: 2px;
+    }
+    .tag-item:hover { background: hsl(35, 35%, 92%); }
+    .tag-item.active { background: hsla(25, 55%, 48%, 0.1); color: hsl(25, 55%, 48%); font-weight: 500; }
+    .tag-item.protected { cursor: pointer; }
+    .tag-item .tag-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tag-item .tag-count { font-size: 12px; color: hsl(30, 6%, 45%); }
+    .tag-item.active .tag-count { color: hsl(25, 55%, 48%); }
+    .tag-item .tag-actions { display: none; gap: 2px; }
+    .tag-item:hover .tag-actions { display: flex; }
+    .tag-actions button {
+      width: 22px; height: 22px; border: none; background: transparent;
+      border-radius: 4px; cursor: pointer; font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+      color: hsl(30, 6%, 45%);
+    }
+    .tag-actions button:hover { background: hsl(35, 15%, 88%); }
+    .tag-actions .delete-btn:hover { background: hsla(0, 50%, 55%, 0.1); color: hsl(0, 50%, 55%); }
+    .tag-divider { height: 1px; background: hsl(35, 15%, 88%); margin: 8px 4px; }
+    .tag-input {
+      width: 100%; height: 32px; padding: 0 8px;
+      border: 1px solid hsl(35, 15%, 88%); border-radius: 6px;
+      font-size: 14px; background: white; outline: none;
+    }
+    .tag-input:focus { border-color: hsl(25, 55%, 48%); }
+    .tag-edit-input {
+      flex: 1; height: 28px; padding: 0 8px;
+      border: 1px solid hsl(35, 15%, 88%); border-radius: 4px;
+      font-size: 14px; background: white; outline: none;
+    }
+    .lock-btn {
+      width: 22px; height: 22px; border: none; background: transparent;
+      border-radius: 4px; cursor: pointer; font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+      color: hsl(30, 6%, 45%);
+    }
+    .lock-btn:hover { background: hsl(35, 15%, 88%); color: hsl(25, 55%, 48%); }
+
+    /* ===== 备忘录列表 ===== */
+    .note-list {
+      width: 280px; flex-shrink: 0;
+      border-right: 1px solid hsl(35, 15%, 88%);
+      background: white;
+      display: flex; flex-direction: column;
+    }
+    .note-list-header {
+      padding: 16px; border-bottom: 1px solid hsl(35, 15%, 88%);
+    }
+    .note-list-title {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .note-list-title h2 { font-size: 14px; font-weight: 600; }
+    .add-btn {
+      width: 28px; height: 28px; border: none; border-radius: 6px;
+      background: hsl(25, 55%, 48%); color: white; cursor: pointer;
+      font-size: 18px; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .add-btn:hover { background: hsl(25, 55%, 42%); }
+    .add-btn:disabled { background: hsl(35, 10%, 70%); cursor: not-allowed; }
+    .search-box {
+      width: 100%; height: 36px; padding: 0 12px 0 36px;
+      border: 1px solid hsl(35, 15%, 88%); border-radius: 6px;
+      font-size: 14px; outline: none; background: white;
+    }
+    .search-box:focus { border-color: hsl(25, 55%, 48%); }
+    .search-wrapper { position: relative; }
+    .search-wrapper::before {
+      content: "🔍"; position: absolute; left: 10px; top: 50%;
+      transform: translateY(-50%); font-size: 14px; opacity: 0.5;
+    }
+    .note-items { flex: 1; overflow-y: auto; padding: 8px; }
+    .note-item {
+      padding: 12px; border-radius: 8px; cursor: pointer;
+      margin-bottom: 4px; border: 1px solid transparent;
+      transition: background 0.15s; position: relative;
+    }
+    .note-item:hover { background: hsl(35, 20%, 94%); }
+    .note-item.active {
+      background: hsla(25, 55%, 48%, 0.1);
+      border-color: hsla(25, 55%, 48%, 0.2);
+    }
+    .note-item.locked-item { opacity: 0.7; }
+    .note-item-title {
+      font-size: 14px; font-weight: 500; margin-bottom: 4px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      padding-right: 24px;
+    }
+    .note-item-preview {
+      font-size: 12px; color: hsl(30, 6%, 45%);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; line-height: 1.5;
+    }
+    .note-item-meta {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 8px;
+    }
+    .note-item-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+    .note-tag {
+      font-size: 10px; padding: 1px 6px; border-radius: 4px;
+      background: hsl(35, 35%, 92%); color: hsl(25, 40%, 30%);
+    }
+    .note-tag.encrypted-tag { background: hsl(25, 55%, 48%); color: white; }
+    .note-item-time { font-size: 10px; color: hsl(30, 6%, 45%); }
+    .note-item-delete {
+      position: absolute; top: 10px; right: 10px;
+      width: 22px; height: 22px; border: none; background: transparent;
+      border-radius: 4px; cursor: pointer; font-size: 12px;
+      display: none; align-items: center; justify-content: center;
+      color: hsl(30, 6%, 45%);
+    }
+    .note-item:hover .note-item-delete { display: flex; }
+    .note-item-delete:hover { color: hsl(0, 50%, 55%); background: hsla(0, 50%, 55%, 0.1); }
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; height: 100%; color: hsl(30, 6%, 45%);
+      text-align: center; padding: 20px;
+    }
+    .empty-state .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.3; }
+    .empty-state p { font-size: 14px; }
+    .empty-state .hint { font-size: 12px; margin-top: 4px; opacity: 0.7; }
+    .lock-notice {
+      margin: 12px; padding: 16px; text-align: center;
+      border: 1px dashed hsl(35, 15%, 80%); border-radius: 8px;
+      color: hsl(30, 6%, 45%);
+    }
+    .lock-notice .icon { font-size: 32px; margin-bottom: 8px; }
+    .lock-notice p { font-size: 13px; margin-bottom: 12px; }
+    .unlock-btn {
+      padding: 8px 20px; border: none; border-radius: 6px;
+      background: hsl(25, 55%, 48%); color: white; cursor: pointer;
+      font-size: 13px; transition: background 0.15s;
+    }
+    .unlock-btn:hover { background: hsl(25, 55%, 42%); }
+
+    /* ===== 编辑区 ===== */
+    .editor { flex: 1; display: flex; flex-direction: column; background: white; min-width: 0; }
+    .editor-header {
+      padding: 16px 24px; border-bottom: 1px solid hsl(35, 15%, 88%);
+    }
+    .editor-title {
+      width: 100%; border: none; outline: none; font-size: 22px;
+      font-weight: 600; font-family: Georgia, "Noto Serif SC", serif;
+      background: transparent; color: hsl(30, 10%, 15%);
+    }
+    .editor-title::placeholder { color: hsla(30, 6%, 45%, 0.5); }
+    .editor-meta {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 8px; flex-wrap: wrap; gap: 8px;
+    }
+    .editor-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .editor-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12px; padding: 2px 8px; border-radius: 4px;
+      background: hsl(35, 35%, 92%); color: hsl(25, 40%, 30%);
+    }
+    .editor-tag.encrypted-tag { background: hsl(25, 55%, 48%); color: white; }
+    .editor-tag button {
+      border: none; background: transparent; cursor: pointer;
+      font-size: 14px; color: inherit; padding: 0;
+      line-height: 1; display: flex; align-items: center;
+    }
+    .editor-tag button:hover { opacity: 0.7; }
+    .add-tag-btn {
+      font-size: 12px; padding: 2px 8px; border: none; background: transparent;
+      color: hsl(30, 6%, 45%); cursor: pointer; border-radius: 4px;
+      display: inline-flex; align-items: center; gap: 2px;
+    }
+    .add-tag-btn:hover { background: hsl(35, 20%, 94%); color: hsl(30, 10%, 15%); }
+    .tag-suggestions {
+      display: flex; gap: 4px; margin-left: 4px; padding-left: 8px;
+      border-left: 1px solid hsl(35, 15%, 88%); flex-wrap: wrap;
+    }
+    .tag-suggestion {
+      font-size: 11px; padding: 1px 6px; border: 1px solid hsl(35, 15%, 88%);
+      border-radius: 4px; background: white; color: hsl(30, 6%, 45%);
+      cursor: pointer;
+    }
+    .tag-suggestion:hover { background: hsl(35, 20%, 94%); color: hsl(30, 10%, 15%); }
+    .editor-time { font-size: 12px; color: hsl(30, 6%, 45%); }
+
+    /* ===== 工具栏 ===== */
+    .toolbar {
+      display: flex; align-items: center; gap: 2px;
+      padding: 6px 12px; border-bottom: 1px solid hsl(35, 15%, 88%);
+      background: hsl(35, 20%, 94%); overflow-x: auto;
+    }
+    .toolbar-group { display: flex; align-items: center; gap: 2px; }
+    .toolbar-sep { width: 1px; height: 20px; background: hsl(35, 15%, 88%); margin: 0 6px; }
+    .tool-btn {
+      width: 30px; height: 30px; border: none; background: transparent;
+      border-radius: 6px; cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      color: hsl(30, 6%, 45%); transition: background 0.15s;
+      flex-shrink: 0; position: relative;
+    }
+    .tool-btn:hover:not(:disabled) { background: hsl(35, 15%, 88%); color: hsl(30, 10%, 15%); }
+    .tool-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .tool-btn.active { background: hsl(35, 35%, 92%); color: hsl(25, 40%, 30%); }
+    .tool-btn .tooltip {
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      background: hsl(30, 10%, 15%); color: white; font-size: 11px;
+      padding: 4px 8px; border-radius: 4px; white-space: nowrap;
+      opacity: 0; pointer-events: none; transition: opacity 0.15s;
+      margin-bottom: 4px; z-index: 100;
+    }
+    .tool-btn:hover .tooltip { opacity: 1; }
+    .toolbar-right { margin-left: auto; display: flex; gap: 2px; padding-left: 8px; border-left: 1px solid hsl(35, 15%, 88%); }
+    .dropdown { position: relative; }
+    .dropdown-menu {
+      position: absolute; top: 100%; left: 0; margin-top: 4px;
+      background: white; border: 1px solid hsl(35, 15%, 88%);
+      border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 4px 0; min-width: 140px; z-index: 100; display: none;
+    }
+    .dropdown.open .dropdown-menu { display: block; }
+    .dropdown-item {
+      display: block; width: 100%; padding: 8px 12px; border: none;
+      background: transparent; text-align: left; font-size: 13px;
+      cursor: pointer; color: hsl(30, 10%, 15%);
+    }
+    .dropdown-item:hover { background: hsl(35, 20%, 94%); }
+
+    /* ===== 编辑内容区 ===== */
+    .editor-content { flex: 1; overflow: hidden; display: flex; }
+    .editor-pane { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+    .editor-pane:first-child { border-right: 1px solid hsl(35, 15%, 88%); }
+    .editor-textarea {
+      flex: 1; width: 100%; border: none; outline: none; resize: none;
+      padding: 24px; font-family: "Consolas", "Source Code Pro", monospace;
+      font-size: 14px; line-height: 1.7; background: white;
+      color: hsl(30, 10%, 15%);
+    }
+    .editor-textarea::placeholder { color: hsla(30, 6%, 45%, 0.5); }
+    .preview-pane { flex: 1; overflow-y: auto; padding: 24px; background: white; }
+
+    /* ===== Markdown 预览样式 ===== */
+    .markdown-body { color: hsl(30, 10%, 15%); line-height: 1.75; font-size: 15px; }
+    .markdown-body h1, .markdown-body h2, .markdown-body h3,
+    .markdown-body h4, .markdown-body h5, .markdown-body h6 {
+      font-weight: 600; margin-top: 1.5em; margin-bottom: 0.6em; line-height: 1.3;
+    }
+    .markdown-body h1 { font-size: 1.875rem; border-bottom: 1px solid hsl(35, 15%, 88%); padding-bottom: 0.3em; }
+    .markdown-body h2 { font-size: 1.5rem; border-bottom: 1px solid hsl(35, 15%, 88%); padding-bottom: 0.3em; }
+    .markdown-body h3 { font-size: 1.25rem; }
+    .markdown-body h4 { font-size: 1.1rem; }
+    .markdown-body p { margin: 0.8em 0; }
+    .markdown-body ul, .markdown-body ol { margin: 0.8em 0; padding-left: 1.8em; }
+    .markdown-body ul { list-style: disc; }
+    .markdown-body ol { list-style: decimal; }
+    .markdown-body li { margin: 0.3em 0; }
+    .markdown-body code {
+      background: hsl(35, 20%, 94%); padding: 0.2em 0.4em; border-radius: 4px;
+      font-size: 0.9em; font-family: Consolas, monospace;
+    }
+    .markdown-body pre {
+      background: hsl(35, 20%, 94%); padding: 1em; border-radius: 8px;
+      overflow-x: auto; margin: 1em 0;
+    }
+    .markdown-body pre code { background: none; padding: 0; font-size: 0.875rem; }
+    .markdown-body blockquote {
+      border-left: 4px solid hsla(25, 55%, 48%, 0.3);
+      background: hsla(25, 55%, 48%, 0.06);
+      padding: 0.6em 1em; margin: 1em 0; border-radius: 0 6px 6px 0;
+      color: hsl(30, 6%, 45%);
+    }
+    .markdown-body blockquote p { margin: 0.3em 0; }
+    .markdown-body a { color: hsl(25, 55%, 48%); text-decoration: underline; text-underline-offset: 2px; }
+    .markdown-body a:hover { color: hsl(25, 60%, 38%); }
+    .markdown-body img { max-width: 100%; border-radius: 6px; margin: 1em 0; }
+    .markdown-body hr { border: none; border-top: 1px solid hsl(35, 15%, 88%); margin: 1.5em 0; }
+    .markdown-body table {
+      width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 0.9em;
+    }
+    .markdown-body th, .markdown-body td {
+      border: 1px solid hsl(35, 15%, 88%); padding: 0.5em 0.8em; text-align: left;
+    }
+    .markdown-body th { background: hsl(35, 20%, 94%); font-weight: 600; }
+    .markdown-body tr:nth-child(even) td { background: hsla(35, 20%, 94%, 0.5); }
+    .markdown-body strong { font-weight: 600; }
+    .markdown-body em { font-style: italic; }
+    .markdown-body del { text-decoration: line-through; }
+    .markdown-body mark { background: #fff3a0; padding: 0 2px; border-radius: 2px; }
+
+    /* 滚动条 */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: hsl(35, 15%, 80%); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: hsl(35, 10%, 70%); }
+
+    .editor-empty {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; color: hsl(30, 6%, 45%);
+    }
+    .editor-empty .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+    .editor-empty p { font-size: 14px; }
+
+    /* ===== 密码弹窗 ===== */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: white; border-radius: 12px; padding: 28px;
+      width: 360px; max-width: 90vw;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+    .modal-icon { font-size: 40px; text-align: center; margin-bottom: 12px; }
+    .modal h3 { font-size: 17px; font-weight: 600; text-align: center; margin-bottom: 8px; }
+    .modal p { font-size: 13px; color: hsl(30, 6%, 45%); text-align: center; margin-bottom: 20px; }
+    .modal-input {
+      width: 100%; height: 40px; padding: 0 12px;
+      border: 1px solid hsl(35, 15%, 88%); border-radius: 8px;
+      font-size: 14px; outline: none; margin-bottom: 12px;
+    }
+    .modal-input:focus { border-color: hsl(25, 55%, 48%); }
+    .modal-error {
+      color: hsl(0, 50%, 55%); font-size: 12px; text-align: center;
+      margin-bottom: 12px; min-height: 18px;
+    }
+    .modal-buttons { display: flex; gap: 8px; }
+    .modal-btn {
+      flex: 1; height: 40px; border: none; border-radius: 8px;
+      font-size: 14px; cursor: pointer; transition: background 0.15s;
+    }
+    .modal-btn-primary {
+      background: hsl(25, 55%, 48%); color: white;
+    }
+    .modal-btn-primary:hover { background: hsl(25, 55%, 42%); }
+    .modal-btn-secondary {
+      background: hsl(35, 20%, 94%); color: hsl(30, 10%, 15%);
+    }
+    .modal-btn-secondary:hover { background: hsl(35, 15%, 88%); }
+  </style>
+</head>
+<body>
+  <div class="app" id="app"></div>
+
+  <script>
+  (function() {
+    'use strict';
+
+    // ===== 常量 =====
+    const STORAGE_KEYS = { TAGS: 'memo_app_tags', NOTES: 'memo_app_notes', ENC: 'memo_app_enc_config' };
+    const ENC_TAG_ID = 'tag-encrypted';
+    const ENC_PREFIX = 'enc:v1:';
+    const ENC_VERIFIER_TEXT = 'memo-encrypted-valid';
+
+    // ===== 基础工具 =====
+    function load(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch(e) { return fallback; }
+    }
+    function save(key, val) {
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+    }
+    function uid(prefix) {
+      return prefix + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    }
+    function relTime(ts) {
+      const diff = Date.now() - ts;
+      const m = Math.floor(diff / 60000), h = Math.floor(diff / 3600000), d = Math.floor(diff / 86400000);
+      if (m < 1) return '刚刚';
+      if (m < 60) return m + '分钟前';
+      if (h < 24) return h + '小时前';
+      if (d < 30) return d + '天前';
+      return fmtDate(ts, true);
+    }
+    function fmtDate(ts, short) {
+      const d = new Date(ts);
+      const p = n => String(n).padStart(2, '0');
+      const s = d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+      return short ? s : s + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+    function renderMD(content) {
+      if (!content) return '<p style="color:hsl(30,6%,45%);font-style:italic;">暂无内容，开始写作吧...</p>';
+      try {
+        let html = marked.parse(content);
+        html = html.replace(/==([^=]+)==/g, '<mark>$1</mark>');
+        return html;
+      } catch(e) { return '<p style="color:hsl(0,50%,55%);">渲染失败: ' + e.message + '</p>'; }
+    }
+    function esc(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+    function bufToBase64(buf) {
+      const bytes = new Uint8Array(buf);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      return btoa(binary);
+    }
+    function base64ToBuf(b64) {
+      const binary = atob(b64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes;
+    }
+
+    // ===== 加密模块 =====
+    let cryptoKey = null; // 解锁后的 AES-GCM 密钥（仅内存）
+    let encSaltB64 = null;
+    let encVerifier = null;
+    let encPasswordSet = false;
+
+    function loadEncConfig() {
+      const cfg = load(STORAGE_KEYS.ENC, null);
+      if (cfg && cfg.salt && cfg.verifier) {
+        encSaltB64 = cfg.salt;
+        encVerifier = cfg.verifier;
+        encPasswordSet = true;
+        return true;
+      }
+      return false;
+    }
+
+    async function deriveKey(password, saltBuf) {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+      );
+      return crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: saltBuf, iterations: 100000, hash: 'SHA-256' },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+    }
+
+    async function encryptText(text, key) {
+      const enc = new TextEncoder();
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ciphertext = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv }, key, enc.encode(text)
+      );
+      const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+      combined.set(iv);
+      combined.set(new Uint8Array(ciphertext), iv.length);
+      return ENC_PREFIX + bufToBase64(combined.buffer);
+    }
+
+    async function decryptText(encrypted, key) {
+      if (!encrypted || typeof encrypted !== 'string' || !encrypted.startsWith(ENC_PREFIX)) return encrypted;
+      try {
+        const data = base64ToBuf(encrypted.slice(ENC_PREFIX.length));
+        const iv = data.slice(0, 12);
+        const ciphertext = data.slice(12);
+        const plaintext = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: iv }, key, ciphertext
+        );
+        return new TextDecoder().decode(plaintext);
+      } catch(e) {
+        return '[解密失败]';
+      }
+    }
+
+    async function setupPassword(password) {
+      const saltBuf = crypto.getRandomValues(new Uint8Array(16));
+      const key = await deriveKey(password, saltBuf);
+      const verifier = await encryptText(ENC_VERIFIER_TEXT, key);
+      encSaltB64 = bufToBase64(saltBuf.buffer);
+      encVerifier = verifier;
+      encPasswordSet = true;
+      cryptoKey = key;
+      save(STORAGE_KEYS.ENC, { salt: encSaltB64, verifier: verifier });
+      // 解密已有加密笔记（首次设置时通常没有）
+      await decryptEncryptedNotes();
+    }
+
+    async function tryUnlock(password) {
+      if (!encSaltB64) return false;
+      try {
+        const saltBuf = base64ToBuf(encSaltB64);
+        const key = await deriveKey(password, saltBuf);
+        const verified = await decryptText(encVerifier, key);
+        if (verified !== ENC_VERIFIER_TEXT) return false;
+        cryptoKey = key;
+        await decryptEncryptedNotes();
+        return true;
+      } catch(e) {
+        return false;
+      }
+    }
+
+    function lock() {
+      // 加密内存中的加密笔记，然后清除密钥
+      encryptEncryptedNotes().then(() => {
+        cryptoKey = null;
+        activeTagId = 'all';
+        activeNoteId = null;
+        render();
+      });
+    }
+
+    function isEncryptedNote(note) {
+      return note.tagIds.includes(ENC_TAG_ID);
+    }
+    function isEncryptedField(val) {
+      return typeof val === 'string' && val.startsWith(ENC_PREFIX);
+    }
+
+    async function decryptEncryptedNotes() {
+      if (!cryptoKey) return;
+      for (const note of notes) {
+        if (isEncryptedNote(note)) {
+          if (isEncryptedField(note.title)) note.title = await decryptText(note.title, cryptoKey);
+          if (isEncryptedField(note.content)) note.content = await decryptText(note.content, cryptoKey);
+        }
+      }
+    }
+
+    async function encryptEncryptedNotes() {
+      if (!cryptoKey) return;
+      for (const note of notes) {
+        if (isEncryptedNote(note)) {
+          if (!isEncryptedField(note.title)) note.title = await encryptText(note.title || '无标题', cryptoKey);
+          if (!isEncryptedField(note.content)) note.content = await encryptText(note.content || '', cryptoKey);
+        }
+      }
+    }
+
+    // 保存笔记到 localStorage（加密笔记会加密后存储）
+    async function saveNotes() {
+      let toSave = notes;
+      if (cryptoKey) {
+        toSave = [];
+        for (const note of notes) {
+          if (isEncryptedNote(note) && !isEncryptedField(note.title)) {
+            toSave.push({
+              ...note,
+              title: await encryptText(note.title || '无标题', cryptoKey),
+              content: await encryptText(note.content || '', cryptoKey),
+            });
+          } else {
+            toSave.push(note);
+          }
+        }
+      }
+      save(STORAGE_KEYS.NOTES, toSave);
+    }
+
+    // 快速保存（不等待加密，用于频繁输入）
+    function saveNotesDeferred() {
+      saveNotes();
+    }
+
+    // ===== 初始数据 =====
+    const now = Date.now();
+    const INITIAL_TAGS = [
+      { id: ENC_TAG_ID, name: '加密笔记本', protected: true, createdAt: now - 345600000 },
+      { id: 'tag-work', name: '工作', createdAt: now - 259200000 },
+      { id: 'tag-study', name: '学习', createdAt: now - 172800000 },
+      { id: 'tag-life', name: '生活', createdAt: now - 86400000 },
+    ];
+    const INITIAL_NOTES = [
+      {
+        id: 'note-1', title: '项目周会纪要',
+        content: '# 项目周会纪要\n\n## 参会人员\n- 张三（项目经理）\n- 李四（前端开发）\n- 王五（后端开发）\n\n## 会议内容\n\n### 1. 本周进度\n- 前端页面开发完成 **80%**\n- 后端接口开发完成 **70%**\n\n### 2. 下周计划\n- 完成剩余页面开发\n- 开始联调测试\n\n> 注意：下周三之前必须完成所有接口\n\n```javascript\n// 示例代码\nconst greeting = "Hello, World!";\nconsole.log(greeting);\n```\n\n## 行动项\n- 修复登录页 bug\n- 完善用户管理模块',
+        tagIds: ['tag-work'], createdAt: now - 172800000, updatedAt: now - 86400000,
+      },
+      {
+        id: 'note-2', title: 'React 学习笔记',
+        content: '# React 学习笔记\n\n## Hooks\n\n### useState\n用于在函数组件中添加状态。\n\n```jsx\nconst [count, setCount] = useState(0);\n```\n\n### useEffect\n用于处理副作用，如数据获取、订阅等。\n\n**常见用法：**\n1. 数据获取\n2. 事件监听\n3. 手动操作 DOM\n\n## 参考资料\n- [React 官方文档](https://react.dev)',
+        tagIds: ['tag-study'], createdAt: now - 259200000, updatedAt: now - 172800000,
+      },
+      {
+        id: 'note-3', title: '周末购物清单',
+        content: '# 周末购物清单\n\n## 生鲜\n- 鸡蛋 1 盒\n- 牛奶 2 升\n- 苹果 1 斤\n\n## 日用品\n1. 洗发水\n2. 牙膏\n3. 卫生纸\n\n> 记得带环保袋\n\n预算：**200 元以内**',
+        tagIds: ['tag-life'], createdAt: now - 3600000, updatedAt: now - 1800000,
+      },
+    ];
+
+    // ===== 状态 =====
+    loadEncConfig();
+    let tags = load(STORAGE_KEYS.TAGS, INITIAL_TAGS);
+    // 确保加密标签始终存在
+    if (!tags.find(t => t.id === ENC_TAG_ID)) {
+      tags.unshift({ id: ENC_TAG_ID, name: '加密笔记本', protected: true, createdAt: Date.now() });
+    }
+    let notes = load(STORAGE_KEYS.NOTES, INITIAL_NOTES);
+    let activeTagId = 'all';
+    let activeNoteId = null;
+    let searchQuery = '';
+    let viewMode = 'split';
+    let addingTag = false;
+    let editingTagId = null;
+    let modalMode = null; // 'set-password' | 'unlock' | null
+    let modalError = '';
+
+    const app = document.getElementById('app');
+
+    // ===== 查询函数 =====
+    function getFilteredNotes() {
+      let result = notes.slice();
+      if (activeTagId === ENC_TAG_ID) {
+        result = result.filter(n => n.tagIds.includes(ENC_TAG_ID));
+        // 锁定时不显示加密笔记内容
+        if (!cryptoKey) return [];
+      } else if (activeTagId !== 'all') {
+        result = result.filter(n => n.tagIds.includes(activeTagId));
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        result = result.filter(n => {
+          const title = isEncryptedField(n.title) ? '' : n.title;
+          const content = isEncryptedField(n.content) ? '' : n.content;
+          return title.toLowerCase().includes(q) || content.toLowerCase().includes(q);
+        });
+      }
+      result.sort((a, b) => b.updatedAt - a.updatedAt);
+      return result;
+    }
+    function getActiveNote() {
+      const note = notes.find(n => n.id === activeNoteId);
+      if (!note) return null;
+      // 如果是加密笔记但未解锁，不返回
+      if (isEncryptedNote(note) && !cryptoKey) return null;
+      return note;
+    }
+    function getTagCounts() {
+      const counts = { all: notes.length };
+      tags.forEach(t => {
+        if (t.id === ENC_TAG_ID) {
+          counts[t.id] = notes.filter(n => n.tagIds.includes(ENC_TAG_ID)).length;
+        } else {
+          counts[t.id] = notes.filter(n => n.tagIds.includes(t.id)).length;
+        }
+      });
+      return counts;
+    }
+
+    // ===== 主渲染 =====
+    function render() {
+      save(STORAGE_KEYS.TAGS, tags);
+      saveNotesDeferred();
+
+      const filtered = getFilteredNotes();
+      if (filtered.length > 0 && !activeNoteId && activeTagId !== ENC_TAG_ID) {
+        activeNoteId = filtered[0].id;
+      }
+      if (activeTagId === ENC_TAG_ID && !cryptoKey) activeNoteId = null;
+      const activeNote = getActiveNote();
+      const counts = getTagCounts();
+
+      app.innerHTML = '';
+
+      // ===== 侧边栏 =====
+      const sidebar = document.createElement('div');
+      sidebar.className = 'sidebar';
+      sidebar.innerHTML = `
+        <div class="sidebar-header">
+          <h2>标签</h2>
+          <button class="icon-btn" id="addTagBtn" title="新建标签">+</button>
+        </div>
+        <div class="tag-list" id="tagList"></div>
+        <div class="sidebar-footer">
+          <a class="settings-link" href="settings.html" title="设置">⚙️ 设置</a>
+        </div>
+      `;
+      app.appendChild(sidebar);
+
+      const tagList = sidebar.querySelector('#tagList');
+
+      // 全部
+      const allItem = document.createElement('div');
+      allItem.className = 'tag-item' + (activeTagId === 'all' ? ' active' : '');
+      allItem.innerHTML = `<span>📥</span><span class="tag-name">全部</span><span class="tag-count">${counts.all}</span>`;
+      allItem.onclick = () => { activeTagId = 'all'; activeNoteId = null; render(); };
+      tagList.appendChild(allItem);
+
+      const divider = document.createElement('div');
+      divider.className = 'tag-divider';
+      tagList.appendChild(divider);
+
+      // 新建标签输入
+      if (addingTag) {
+        const inputWrap = document.createElement('div');
+        inputWrap.style.marginBottom = '4px';
+        const input = document.createElement('input');
+        input.className = 'tag-input';
+        input.placeholder = '输入标签名...';
+        const submit = () => {
+          const name = input.value.trim();
+          if (name) tags.push({ id: uid('tag'), name, createdAt: Date.now() });
+          addingTag = false; render();
+        };
+        input.onkeydown = (e) => {
+          if (e.key === 'Enter') submit();
+          if (e.key === 'Escape') { addingTag = false; render(); }
+        };
+        input.onblur = submit;
+        inputWrap.appendChild(input);
+        tagList.appendChild(inputWrap);
+        setTimeout(() => input.focus(), 0);
+      }
+
+      // 标签列表
+      tags.forEach(tag => {
+        const item = document.createElement('div');
+        const isEncTag = tag.id === ENC_TAG_ID;
+        const isActive = activeTagId === tag.id;
+        item.className = 'tag-item' + (isActive ? ' active' : '') + (isEncTag ? ' protected' : '');
+
+        if (editingTagId === tag.id && !tag.protected) {
+          const input = document.createElement('input');
+          input.className = 'tag-edit-input';
+          input.value = tag.name;
+          const submit = () => {
+            const name = input.value.trim();
+            if (name) { const t = tags.find(x => x.id === tag.id); if (t) t.name = name; }
+            editingTagId = null; render();
+          };
+          input.onkeydown = (e) => {
+            if (e.key === 'Enter') submit();
+            if (e.key === 'Escape') { editingTagId = null; render(); }
+          };
+          input.onblur = submit;
+          item.innerHTML = `<span>#</span>`;
+          item.appendChild(input);
+          tagList.appendChild(item);
+          setTimeout(() => { input.focus(); input.select(); }, 0);
+          return;
+        }
+
+        const lockIcon = isEncTag ? (cryptoKey ? '🔓' : '🔒') : '#';
+        let actionsHtml = '';
+        if (isEncTag) {
+          // 加密标签：锁定时显示锁按钮（点击解锁），解锁时也显示锁按钮（点击锁定）
+          actionsHtml = `<button class="lock-btn" title="${cryptoKey ? '锁定' : '解锁'}">${cryptoKey ? '🔒' : '🔑'}</button>`;
+        } else {
+          actionsHtml = `
+            <span class="tag-actions">
+              <button class="edit-btn" title="重命名">✎</button>
+              <button class="delete-btn" title="删除">🗑</button>
+            </span>`;
+        }
+
+        item.innerHTML = `
+          <span>${lockIcon}</span>
+          <span class="tag-name">${esc(tag.name)}</span>
+          <span class="tag-count">${counts[tag.id] || 0}</span>
+          ${actionsHtml}
+        `;
+
+        item.onclick = (e) => {
+          if (e.target.closest('.lock-btn')) return;
+          if (e.target.closest('.tag-actions')) return;
+          if (isEncTag && !cryptoKey) {
+            // 点击加密标签且未解锁 → 弹窗
+            if (!encPasswordSet) {
+              modalMode = 'set-password';
+            } else {
+              modalMode = 'unlock';
+            }
+            activeTagId = ENC_TAG_ID;
+            activeNoteId = null;
+            modalError = '';
+            render();
+            return;
+          }
+          activeTagId = tag.id;
+          activeNoteId = null;
+          render();
+        };
+
+        if (isEncTag) {
+          item.querySelector('.lock-btn').onclick = (e) => {
+            e.stopPropagation();
+            if (cryptoKey) {
+              lock();
+            } else {
+              modalMode = encPasswordSet ? 'unlock' : 'set-password';
+              activeTagId = ENC_TAG_ID;
+              modalError = '';
+              render();
+            }
+          };
+        } else {
+          item.querySelector('.edit-btn').onclick = (e) => {
+            e.stopPropagation(); editingTagId = tag.id; render();
+          };
+          item.querySelector('.delete-btn').onclick = (e) => {
+            e.stopPropagation();
+            if (confirm('确定删除标签「' + tag.name + '」吗？该标签下的备忘录将保留但移除该标签。')) {
+              tags = tags.filter(t => t.id !== tag.id);
+              notes = notes.map(n => ({ ...n, tagIds: n.tagIds.filter(id => id !== tag.id) }));
+              if (activeTagId === tag.id) activeTagId = 'all';
+              render();
+            }
+          };
+        }
+        tagList.appendChild(item);
+      });
+
+      sidebar.querySelector('#addTagBtn').onclick = () => { addingTag = true; render(); };
+
+      // ===== 备忘录列表 =====
+      const list = document.createElement('div');
+      list.className = 'note-list';
+
+      // 加密标签且未锁定 → 显示解锁提示
+      if (activeTagId === ENC_TAG_ID && !cryptoKey) {
+        list.innerHTML = `
+          <div class="note-list-header">
+            <div class="note-list-title">
+              <h2>🔒 加密笔记本</h2>
+            </div>
+          </div>
+          <div class="lock-notice">
+            <div class="icon">🔒</div>
+            <p>${encPasswordSet ? '请输入密码解锁加密笔记本' : '设置密码以创建加密笔记本'}</p>
+            <button class="unlock-btn" id="unlockBtn">${encPasswordSet ? '解锁' : '设置密码'}</button>
+          </div>
+        `;
+        app.appendChild(list);
+        list.querySelector('#unlockBtn').onclick = () => {
+          modalMode = encPasswordSet ? 'unlock' : 'set-password';
+          modalError = '';
+          render();
+        };
+      } else {
+        list.innerHTML = `
+          <div class="note-list-header">
+            <div class="note-list-title">
+              <h2>${activeTagId === ENC_TAG_ID ? '🔓 加密笔记本' : '备忘录'}</h2>
+              <button class="add-btn" id="addNoteBtn" title="新建备忘录" ${activeTagId === ENC_TAG_ID && !cryptoKey ? 'disabled' : ''}>+</button>
+            </div>
+            <div class="search-wrapper">
+              <input class="search-box" id="searchInput" placeholder="搜索备忘录..." value="${esc(searchQuery)}" />
+            </div>
+          </div>
+          <div class="note-items" id="noteItems"></div>
+        `;
+        app.appendChild(list);
+
+        const noteItems = list.querySelector('#noteItems');
+        list.querySelector('#addNoteBtn').onclick = () => {
+          const newNote = {
+            id: uid('note'), title: '', content: '',
+            tagIds: activeTagId === 'all' ? [] : [activeTagId],
+            createdAt: Date.now(), updatedAt: Date.now(),
+          };
+          notes.unshift(newNote);
+          activeNoteId = newNote.id;
+          render();
+        };
+        const searchInput = list.querySelector('#searchInput');
+        searchInput.oninput = (e) => { searchQuery = e.target.value; render(); };
+        setTimeout(() => {
+          searchInput.focus();
+          const len = searchInput.value.length;
+          searchInput.setSelectionRange(len, len);
+        }, 0);
+
+        if (filtered.length === 0) {
+          noteItems.innerHTML = `
+            <div class="empty-state">
+              <div class="icon">${activeTagId === ENC_TAG_ID ? '🔒' : '📝'}</div>
+              <p>${activeTagId === ENC_TAG_ID ? '加密笔记本为空' : '暂无备忘录'}</p>
+              <p class="hint">点击 + 新建第一条</p>
+            </div>`;
+        } else {
+          filtered.forEach(note => {
+            const item = document.createElement('div');
+            const isEnc = isEncryptedNote(note);
+            const isLocked = isEnc && isEncryptedField(note.title);
+            item.className = 'note-item' + (activeNoteId === note.id ? ' active' : '') + (isLocked ? ' locked-item' : '');
+
+            let titleText, previewText;
+            if (isLocked) {
+              titleText = '🔒 已加密';
+              previewText = '内容已加密，请解锁后查看';
+            } else {
+              titleText = note.title || '无标题';
+              const preview = note.content.replace(/[#*`>\-\[\]()]/g, '').replace(/\n+/g, ' ').trim();
+              previewText = preview.length > 60 ? preview.slice(0, 60) + '...' : preview;
+            }
+
+            const noteTags = tags.filter(t => note.tagIds.includes(t.id));
+            item.innerHTML = `
+              <button class="note-item-delete" title="删除">🗑</button>
+              <div class="note-item-title">${esc(titleText)}</div>
+              <div class="note-item-preview">${esc(previewText || '暂无内容')}</div>
+              <div class="note-item-meta">
+                <div class="note-item-tags">
+                  ${noteTags.slice(0, 2).map(t =>
+                    `<span class="note-tag ${t.id === ENC_TAG_ID ? 'encrypted-tag' : ''}">${t.id === ENC_TAG_ID ? '🔒 ' : ''}${esc(t.name)}</span>`
+                  ).join('')}
+                  ${noteTags.length > 2 ? `<span class="note-tag">+${noteTags.length - 2}</span>` : ''}
+                </div>
+                <span class="note-item-time">${isLocked ? '' : relTime(note.updatedAt)}</span>
+              </div>
+            `;
+            item.onclick = (e) => {
+              if (e.target.closest('.note-item-delete')) return;
+              if (isLocked) return;
+              activeNoteId = note.id; render();
+            };
+            item.querySelector('.note-item-delete').onclick = (e) => {
+              e.stopPropagation();
+              if (confirm('确定删除这条备忘录吗？此操作不可撤销。')) {
+                notes = notes.filter(n => n.id !== note.id);
+                if (activeNoteId === note.id) activeNoteId = null;
+                render();
+              }
+            };
+            noteItems.appendChild(item);
+          });
+        }
+      }
+
+      // ===== 编辑区 =====
+      const editor = document.createElement('div');
+      editor.className = 'editor';
+
+      if (!activeNote) {
+        editor.innerHTML = `
+          <div class="editor-empty">
+            <div class="icon">${activeTagId === ENC_TAG_ID && !cryptoKey ? '🔒' : '📝'}</div>
+            <p>${activeTagId === ENC_TAG_ID && !cryptoKey ? '解锁后查看加密笔记' : '选择或创建一条备忘录'}</p>
+          </div>`;
+        app.appendChild(editor);
+      } else {
+        const noteTags = tags.filter(t => activeNote.tagIds.includes(t.id));
+        const availableTags = tags.filter(t => !activeNote.tagIds.includes(t.id));
+        const isEnc = isEncryptedNote(activeNote);
+
+        editor.innerHTML = `
+          <div class="editor-header">
+            <input class="editor-title" id="editorTitle" placeholder="无标题" value="${esc(activeNote.title)}" />
+            <div class="editor-meta">
+              <div class="editor-tags" id="editorTags">
+                ${noteTags.map(t => `
+                  <span class="editor-tag ${t.id === ENC_TAG_ID ? 'encrypted-tag' : ''}">
+                    ${t.id === ENC_TAG_ID ? '🔒 ' : '#'}${esc(t.name)}
+                    ${t.protected ? '' : `<button data-tag-id="${t.id}" class="remove-tag" title="移除">×</button>`}
+                  </span>
+                `).join('')}
+                <button class="add-tag-btn" id="addTagToNote">+ 添加标签</button>
+                ${availableTags.length > 0 ? `
+                  <div class="tag-suggestions">
+                    ${availableTags.slice(0, 5).map(t => `
+                      <button class="tag-suggestion" data-tag-id="${t.id}">+ ${esc(t.name)}</button>
+                    `).join('')}
+                  </div>` : ''}
+              </div>
+              <span class="editor-time">更新于 ${fmtDate(activeNote.updatedAt)}</span>
+            </div>
+          </div>
+          <div class="toolbar" id="toolbar"></div>
+          <div class="editor-content" id="editorContent"></div>
+        `;
+        app.appendChild(editor);
+
+        const titleInput = editor.querySelector('#editorTitle');
+        titleInput.oninput = (e) => {
+          const n = notes.find(x => x.id === activeNote.id);
+          if (n) { n.title = e.target.value; n.updatedAt = Date.now(); saveNotesDeferred(); }
+        };
+
+        editor.querySelectorAll('.remove-tag').forEach(btn => {
+          btn.onclick = () => {
+            const n = notes.find(x => x.id === activeNote.id);
+            if (n) {
+              n.tagIds = n.tagIds.filter(id => id !== btn.dataset.tagId);
+              n.updatedAt = Date.now();
+              render();
+            }
+          };
+        });
+        editor.querySelectorAll('.tag-suggestion').forEach(btn => {
+          btn.onclick = () => {
+            const n = notes.find(x => x.id === activeNote.id);
+            if (n && !n.tagIds.includes(btn.dataset.tagId)) {
+              n.tagIds.push(btn.dataset.tagId);
+              n.updatedAt = Date.now();
+              render();
+            }
+          };
+        });
+        editor.querySelector('#addTagToNote').onclick = () => {
+          const name = prompt('输入标签名（输入已有标签名会直接关联，新标签会自动创建）：');
+          if (!name || !name.trim()) return;
+          const trimmed = name.trim();
+          if (trimmed === '加密笔记本' || trimmed === '🔒加密笔记本') {
+            alert('加密笔记本标签受保护，请通过左侧标签栏使用。');
+            return;
+          }
+          const existing = tags.find(t => t.name.toLowerCase() === trimmed.toLowerCase());
+          const n = notes.find(x => x.id === activeNote.id);
+          if (!n) return;
+          if (existing) {
+            if (!n.tagIds.includes(existing.id)) { n.tagIds.push(existing.id); n.updatedAt = Date.now(); }
+          } else {
+            const newTag = { id: uid('tag'), name: trimmed, createdAt: Date.now() };
+            tags.push(newTag);
+            n.tagIds.push(newTag.id);
+            n.updatedAt = Date.now();
+          }
+          render();
+        };
+
+        renderToolbar(editor.querySelector('#toolbar'), activeNote);
+        renderEditorContent(editor.querySelector('#editorContent'), activeNote);
+      }
+
+      // ===== 密码弹窗 =====
+      if (modalMode) {
+        renderModal();
+      }
+    }
+
+    // ===== 密码弹窗 =====
+    function renderModal() {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+
+      const isSet = modalMode === 'set-password';
+      overlay.innerHTML = `
+        <div class="modal">
+          <div class="modal-icon">🔒</div>
+          <h3>${isSet ? '设置加密密码' : '解锁加密笔记本'}</h3>
+          <p>${isSet ? '密码将用于加密笔记本中的内容，请牢记密码，忘记后无法恢复。' : '请输入密码以查看加密内容'}</p>
+          <input class="modal-input" id="modalPwd1" type="password" placeholder="请输入密码" autocomplete="off" />
+          ${isSet ? '<input class="modal-input" id="modalPwd2" type="password" placeholder="请再次输入密码" autocomplete="off" />' : ''}
+          <div class="modal-error" id="modalError">${esc(modalError)}</div>
+          <div class="modal-buttons">
+            <button class="modal-btn modal-btn-secondary" id="modalCancel">取消</button>
+            <button class="modal-btn modal-btn-primary" id="modalConfirm">${isSet ? '确认设置' : '解锁'}</button>
+          </div>
+        </div>
+      `;
+      app.appendChild(overlay);
+
+      const pwd1 = overlay.querySelector('#modalPwd1');
+      const pwd2 = overlay.querySelector('#modalPwd2');
+      setTimeout(() => pwd1.focus(), 50);
+
+      const close = () => { modalMode = null; modalError = ''; render(); };
+
+      overlay.querySelector('#modalCancel').onclick = close;
+      overlay.onclick = (e) => { if (e.target === overlay) close(); };
+
+      const confirm = async () => {
+        const password = pwd1.value;
+        if (!password) { modalError = '请输入密码'; renderModalRefresh(); return; }
+
+        if (isSet) {
+          if (password.length < 4) { modalError = '密码至少 4 位'; renderModalRefresh(); return; }
+          if (pwd2.value !== password) { modalError = '两次输入的密码不一致'; renderModalRefresh(); return; }
+          await setupPassword(password);
+          modalMode = null;
+          modalError = '';
+          activeTagId = ENC_TAG_ID;
+          render();
+        } else {
+          const ok = await tryUnlock(password);
+          if (ok) {
+            modalMode = null;
+            modalError = '';
+            activeTagId = ENC_TAG_ID;
+            render();
+          } else {
+            modalError = '密码错误，请重试';
+            renderModalRefresh();
+          }
+        }
+      };
+
+      overlay.querySelector('#modalConfirm').onclick = confirm;
+      pwd1.onkeydown = (e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') close(); };
+      if (pwd2) pwd2.onkeydown = (e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') close(); };
+    }
+
+    function renderModalRefresh() {
+      const overlay = document.querySelector('.modal-overlay');
+      if (overlay) overlay.remove();
+      renderModal();
+    }
+
+    // ===== 工具栏 =====
+    function renderToolbar(container, note) {
+      const disabled = viewMode === 'preview';
+      const groups = [
+        [
+          { icon: 'H1', title: '标题 H1', action: () => insertLinePrefix('# ') },
+          { icon: 'H2', title: '标题 H2', action: () => insertLinePrefix('## ') },
+          { icon: 'H3', title: '标题 H3', action: () => insertLinePrefix('### ') },
+        ],
+        [
+          { icon: 'B', title: '粗体', action: () => insertAround('**', '**', '粗体文字'), style: 'font-weight:bold;' },
+          { icon: 'I', title: '斜体', action: () => insertAround('*', '*', '斜体文字'), style: 'font-style:italic;' },
+          { icon: 'U', title: '下划线', action: () => insertAround('<u>', '</u>', '下划线文字'), style: 'text-decoration:underline;' },
+          { icon: '🖍', title: '高亮', action: () => insertAround('==', '==', '高亮文字') },
+        ],
+        [
+          { icon: '</>', title: '行内代码', action: () => insertAround('`', '`', '代码'), style: 'font-family:monospace;font-size:11px;' },
+          { icon: '{}', title: '代码块', action: () => insertBlock('```\n', '\n```', '代码内容'), style: 'font-family:monospace;font-size:11px;' },
+          { icon: '❝', title: '引用块', action: () => insertLinePrefix('> ') },
+        ],
+        [
+          { icon: '•', title: '无序列表', action: () => insertLinePrefix('- ') },
+          { icon: '1.', title: '有序列表', action: () => insertLinePrefix('1. ') },
+        ],
+        [
+          { icon: '🔗', title: '链接', action: () => insertAround('[', '](url)', '链接文字') },
+          { icon: '🖼', title: '图片', action: () => insertAround('![', '](url)', '图片描述') },
+          { icon: '▦', title: '表格', action: () => insertBlock('| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n| ', ' | 内容 | 内容 |\n| 内容 | 内容 | 内容 |', '内容') },
+        ],
+        [
+          { icon: '∑', title: 'LaTeX 公式', dropdown: true },
+        ],
+        [
+          { icon: '—', title: '分割线', action: () => insertBlock('\n', '\n', '---') },
+        ],
+      ];
+
+      let html = '';
+      groups.forEach((group, gi) => {
+        if (gi > 0) html += '<div class="toolbar-sep"></div>';
+        html += '<div class="toolbar-group">';
+        group.forEach(btn => {
+          if (btn.dropdown) {
+            html += `
+              <div class="dropdown" id="formulaDropdown">
+                <button class="tool-btn" title="${btn.title}">
+                  ${btn.icon}<span style="font-size:8px;margin-left:1px;">▾</span>
+                  <span class="tooltip">${btn.title}</span>
+                </button>
+                <div class="dropdown-menu">
+                  <button class="dropdown-item" data-action="inline">行内公式 $...$</button>
+                  <button class="dropdown-item" data-action="block">块级公式 $$...$$</button>
+                </div>
+              </div>`;
+          } else {
+            html += `
+              <button class="tool-btn" data-action="${gi}-${group.indexOf(btn)}" ${disabled ? 'disabled' : ''} title="${btn.title}" style="${btn.style || ''}">
+                ${btn.icon}
+                <span class="tooltip">${btn.title}</span>
+              </button>`;
+          }
+        });
+        html += '</div>';
+      });
+
+      html += '<div class="toolbar-right">';
+      html += `<button class="tool-btn ${viewMode === 'edit' ? 'active' : ''}" data-view="edit" title="仅编辑">✎<span class="tooltip">仅编辑</span></button>`;
+      html += `<button class="tool-btn ${viewMode === 'split' ? 'active' : ''}" data-view="split" title="并排">⫼<span class="tooltip">并排</span></button>`;
+      html += `<button class="tool-btn ${viewMode === 'preview' ? 'active' : ''}" data-view="preview" title="仅预览">👁<span class="tooltip">仅预览</span></button>`;
+      html += '</div>';
+
+      container.innerHTML = html;
+
+      groups.forEach(group => {
+        group.forEach(btn => {
+          if (btn.dropdown) return;
+          const el = container.querySelector(`[data-action="${groups.indexOf(group)}-${group.indexOf(btn)}"]`);
+          if (el) el.onclick = btn.action;
+        });
+      });
+
+      container.querySelectorAll('[data-view]').forEach(btn => {
+        btn.onclick = () => { viewMode = btn.dataset.view; render(); };
+      });
+
+      const dd = container.querySelector('#formulaDropdown');
+      if (dd) {
+        dd.querySelector('.tool-btn').onclick = (e) => {
+          e.stopPropagation();
+          dd.classList.toggle('open');
+        };
+        dd.querySelectorAll('.dropdown-item').forEach(item => {
+          item.onclick = () => {
+            if (item.dataset.action === 'inline') insertAround('$', '$', '公式');
+            else insertBlock('$$\n', '\n$$', '公式');
+            dd.classList.remove('open');
+          };
+        });
+      }
+      document.addEventListener('click', () => { if (dd) dd.classList.remove('open'); });
+    }
+
+    // ===== 编辑内容区 =====
+    function renderEditorContent(container, note) {
+      if (viewMode === 'edit') {
+        const ta = document.createElement('textarea');
+        ta.className = 'editor-textarea';
+        ta.placeholder = '开始写作，支持 Markdown 语法...';
+        ta.value = note.content;
+        ta.spellcheck = false;
+        ta.oninput = (e) => {
+          const n = notes.find(x => x.id === note.id);
+          if (n) { n.content = e.target.value; n.updatedAt = Date.now(); saveNotesDeferred(); }
+        };
+        container.appendChild(ta);
+        window._activeTextarea = ta;
+      } else if (viewMode === 'preview') {
+        const preview = document.createElement('div');
+        preview.className = 'preview-pane';
+        preview.innerHTML = '<div class="markdown-body">' + renderMD(note.content) + '</div>';
+        container.appendChild(preview);
+      } else {
+        const left = document.createElement('div');
+        left.className = 'editor-pane';
+        const ta = document.createElement('textarea');
+        ta.className = 'editor-textarea';
+        ta.placeholder = '开始写作，支持 Markdown 语法...';
+        ta.value = note.content;
+        ta.spellcheck = false;
+        const preview = document.createElement('div');
+        preview.className = 'preview-pane';
+        preview.innerHTML = '<div class="markdown-body">' + renderMD(note.content) + '</div>';
+
+        ta.oninput = (e) => {
+          const n = notes.find(x => x.id === note.id);
+          if (n) {
+            n.content = e.target.value;
+            n.updatedAt = Date.now();
+            saveNotesDeferred();
+            preview.innerHTML = '<div class="markdown-body">' + renderMD(e.target.value) + '</div>';
+          }
+        };
+        left.appendChild(ta);
+        container.appendChild(left);
+        container.appendChild(preview);
+        window._activeTextarea = ta;
+      }
+    }
+
+    // ===== 文本插入工具 =====
+    function getActiveTextarea() { return window._activeTextarea || null; }
+
+    function insertAround(before, after, placeholder) {
+      const ta = getActiveTextarea();
+      if (!ta) return;
+      const note = getActiveNote();
+      if (!note) return;
+      const start = ta.selectionStart, end = ta.selectionEnd;
+      const val = note.content;
+      const selected = val.substring(start, end) || placeholder;
+      const newText = before + selected + after;
+      const newVal = val.substring(0, start) + newText + val.substring(end);
+      note.content = newVal;
+      note.updatedAt = Date.now();
+      saveNotesDeferred();
+      ta.value = newVal;
+      const s = start + before.length;
+      const e = start + before.length + selected.length;
+      ta.focus();
+      ta.setSelectionRange(s, e);
+      updatePreview();
+    }
+    function insertLinePrefix(prefix) {
+      const ta = getActiveTextarea();
+      if (!ta) return;
+      const note = getActiveNote();
+      if (!note) return;
+      const start = ta.selectionStart;
+      const val = note.content;
+      let lineStart = start;
+      while (lineStart > 0 && val.charAt(lineStart - 1) !== '\n') lineStart--;
+      const newVal = val.substring(0, lineStart) + prefix + val.substring(lineStart);
+      note.content = newVal;
+      note.updatedAt = Date.now();
+      saveNotesDeferred();
+      ta.value = newVal;
+      ta.focus();
+      ta.setSelectionRange(start + prefix.length, start + prefix.length);
+      updatePreview();
+    }
+    function insertBlock(before, after, placeholder) {
+      const ta = getActiveTextarea();
+      if (!ta) return;
+      const note = getActiveNote();
+      if (!note) return;
+      const start = ta.selectionStart, end = ta.selectionEnd;
+      const val = note.content;
+      const selected = val.substring(start, end) || placeholder;
+      let p = before, s = after;
+      if (start > 0 && val.charAt(start - 1) !== '\n') p = '\n' + p;
+      if (end < val.length && val.charAt(end) !== '\n') s = s + '\n';
+      const newText = p + selected + s;
+      const newVal = val.substring(0, start) + newText + val.substring(end);
+      note.content = newVal;
+      note.updatedAt = Date.now();
+      saveNotesDeferred();
+      ta.value = newVal;
+      const ss = start + p.length;
+      const ee = start + p.length + selected.length;
+      ta.focus();
+      ta.setSelectionRange(ss, ee);
+      updatePreview();
+    }
+    function updatePreview() {
+      const note = getActiveNote();
+      if (!note) return;
+      const preview = document.querySelector('.preview-pane .markdown-body');
+      if (preview) preview.innerHTML = renderMD(note.content);
+    }
+
+    // ===== 启动 =====
+    render();
+  })();
+  </script>
+</body>
+</html>
