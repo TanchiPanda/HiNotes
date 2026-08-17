@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>设置</title>
+  <title>设置 - 备忘录</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -144,6 +144,13 @@
     .btn-danger:hover {
       background: hsl(0, 50%, 42%);
     }
+    .btn-danger:disabled {
+      background: hsl(0, 20%, 75%);
+      cursor: not-allowed;
+    }
+    .danger-card {
+      border-color: hsla(0, 50%, 50%, 0.2);
+    }
     .form-actions {
       display: flex;
       gap: 10px;
@@ -256,6 +263,29 @@
           <button class="btn btn-primary" id="changeBtn">修改密码</button>
         </div>
       </div>
+    </div>
+
+    <!-- 清空所有笔记 -->
+    <div class="card danger-card">
+      <div class="card-title">🗑️ 清空所有笔记</div>
+      <p class="card-desc">
+        删除全部备忘录（包括加密笔记本中的内容），此操作不可撤销。
+      </p>
+      <div id="clearConfirmArea" class="hidden">
+        <div class="warning-text" style="background:hsla(0,50%,50%,0.06);border-color:hsla(0,50%,50%,0.2);color:hsl(0,40%,40%);">
+          ⚠️ 此操作将永久删除所有笔记，且无法恢复！
+        </div>
+        <div class="form-group">
+          <label for="clearConfirmInput">请输入「确认删除」以继续</label>
+          <input type="text" id="clearConfirmInput" class="form-input" placeholder="确认删除" autocomplete="off" />
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-secondary" id="clearCancelBtn">取消</button>
+          <button class="btn btn-danger" id="clearConfirmBtn" disabled>确认清空</button>
+        </div>
+      </div>
+      <div id="clearResult" class="form-success"></div>
+      <button class="btn btn-danger" id="clearBtn">清空所有笔记</button>
     </div>
 
     <!-- 关于 -->
@@ -505,6 +535,48 @@
     changeBtn.addEventListener('click', handleChangePassword);
     document.getElementById('changeNewPwd2').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') handleChangePassword();
+    });
+
+    // ===== 清空所有笔记 =====
+    const clearBtn = document.getElementById('clearBtn');
+    const clearConfirmArea = document.getElementById('clearConfirmArea');
+    const clearCancelBtn = document.getElementById('clearCancelBtn');
+    const clearConfirmBtn = document.getElementById('clearConfirmBtn');
+    const clearConfirmInput = document.getElementById('clearConfirmInput');
+    const clearResult = document.getElementById('clearResult');
+
+    clearBtn.addEventListener('click', () => {
+      clearConfirmArea.classList.remove('hidden');
+      clearBtn.classList.add('hidden');
+      clearResult.textContent = '';
+      setTimeout(() => clearConfirmInput.focus(), 50);
+    });
+
+    clearCancelBtn.addEventListener('click', () => {
+      clearConfirmArea.classList.add('hidden');
+      clearBtn.classList.remove('hidden');
+      clearConfirmInput.value = '';
+      clearConfirmBtn.disabled = true;
+    });
+
+    clearConfirmInput.addEventListener('input', () => {
+      clearConfirmBtn.disabled = clearConfirmInput.value !== '确认删除';
+    });
+
+    clearConfirmBtn.addEventListener('click', () => {
+      if (clearConfirmInput.value !== '确认删除') return;
+      try {
+        const count = load(STORAGE_KEYS.NOTES, []).length;
+        save(STORAGE_KEYS.NOTES, []);
+        clearResult.textContent = `已清空 ${count} 条笔记。`;
+        clearConfirmArea.classList.add('hidden');
+        clearBtn.classList.remove('hidden');
+        clearConfirmInput.value = '';
+        clearConfirmBtn.disabled = true;
+      } catch(e) {
+        clearResult.textContent = '清空失败：' + e.message;
+        clearResult.style.color = 'hsl(0, 50%, 50%)';
+      }
     });
   })();
   </script>
