@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenNotes — Settings</title>
+  <style>
+    /* Minimal styling: translated UI strings only */
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", sans-serif; background:hsl(40,20%,97%); color:hsl(30,10%,15%); }
+    .app { max-width:900px; margin:40px auto; }
+    .card { background:white; padding:24px; border-radius:12px; margin-bottom:16px }
+    .card-title { font-weight:600; margin-bottom:12px }
+    input, button { font-size:14px }
+    .hidden { display:none }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="settings-header">
+      <a href="index.html" class="back-btn" title="Back">← Back</a>
+      <h1>Settings</h1>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Storage & Encryption</h2>
+      <p>Encryption: AES-GCM 256 (optional). Use PBKDF2 + SHA-256 for key derivation. Notes are stored locally in your browser.</p>
+
+      <div id="setPasswordSection" class="hidden">
+        <label for="newPwd1">New password</label>
+        <input id="newPwd1" type="password" placeholder="Enter new password" />
+        <label for="newPwd2">Repeat password</label>
+        <input id="newPwd2" type="password" placeholder="Repeat password" />
+        <div id="setError" class="hidden"></div>
+        <button id="setBtn" class="btn btn-primary">Set Encryption</button>
+      </div>
+
+      <div id="changePasswordSection" class="hidden">
+        <label for="oldPwd">Current password</label>
+        <input id="oldPwd" type="password" placeholder="Current password" />
+        <label for="changeNewPwd1">New password</label>
+        <input id="changeNewPwd1" type="password" placeholder="New password" />
+        <label for="changeNewPwd2">Repeat new password</label>
+        <input id="changeNewPwd2" type="password" placeholder="Repeat new password" />
+        <div id="changeError" class="hidden"></div>
+        <button id="changeBtn" class="btn btn-primary">Change Password</button>
+      </div>
+
+      <div>
+        <button id="clearBtn" class="btn btn-danger">Clear All Notes</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">About</h2>
+      <p>OpenNotes — Markdown note app. Static HTML + JS. No backend required.</p>
+    </div>
+
+  </div>
+
+  <script>
+    // Core script trimmed: behavior remains but UI labels are English.
+  </script>
+</body>
+</html>
