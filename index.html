@@ -89,6 +89,15 @@
       text-decoration: none; transition: background 0.15s;
     }
     .settings-link:hover { background: hsl(35, 35%, 92%); color: hsl(25, 40%, 30%); }
+    .library-link {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; margin: 0 8px;
+      border-radius: 6px; cursor: pointer;
+      font-size: 13px; color: hsl(30, 6%, 45%);
+      text-decoration: none; transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .library-link:hover { background: hsl(35, 35%, 92%); color: hsl(25, 40%, 30%); }
     .tag-item {
       display: flex; align-items: center; gap: 8px;
       padding: 8px 12px; border-radius: 6px; cursor: pointer;
@@ -760,6 +769,7 @@
           <button class="icon-btn" id="addTagBtn" title="新建标签">+</button>
         </div>
         <div class="tag-list" id="tagList"></div>
+        <a class="library-link" href="library.html" title="模板库">📚 模板库</a>
         <div class="sidebar-footer">
           <div class="storage-info">
             <div class="storage-text">☁️ 笔记本空间（${notes.length}/${getMaxNotes()}篇）${notes.length >= EXPAND_THRESHOLD && !isExpanded ? '<button class="expand-btn" id="expandBtn">免费扩容</button>' : ''}${isExpanded ? '<span style="color:hsl(140,50%,35%);"> · 已扩容</span>' : ''}</div>
