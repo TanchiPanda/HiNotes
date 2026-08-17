@@ -430,6 +430,7 @@
     const ENC_TAG_ID = 'tag-encrypted';
     const ENC_PREFIX = 'enc:v1:';
     const ENC_VERIFIER_TEXT = 'memo-encrypted-valid';
+    const MAX_NOTES = 100;
 
     // ===== 基础工具 =====
     function load(key, fallback) {
@@ -918,7 +919,7 @@
           <div class="note-list-header">
             <div class="note-list-title">
               <h2>${activeTagId === ENC_TAG_ID ? '🔓 加密笔记本' : '备忘录'}</h2>
-              <button class="add-btn" id="addNoteBtn" title="新建备忘录" ${activeTagId === ENC_TAG_ID && !cryptoKey ? 'disabled' : ''}>+</button>
+              <button class="add-btn" id="addNoteBtn" title="新建备忘录" ${(activeTagId === ENC_TAG_ID && !cryptoKey) || notes.length >= MAX_NOTES ? 'disabled' : ''}>+</button>
             </div>
             <div class="search-wrapper">
               <input class="search-box" id="searchInput" placeholder="搜索备忘录..." value="${esc(searchQuery)}" />
@@ -930,6 +931,10 @@
 
         const noteItems = list.querySelector('#noteItems');
         list.querySelector('#addNoteBtn').onclick = () => {
+          if (notes.length >= MAX_NOTES) {
+            showFullModal();
+            return;
+          }
           const newNote = {
             id: uid('note'), title: '', content: '',
             tagIds: activeTagId === 'all' ? [] : [activeTagId],
@@ -1165,6 +1170,24 @@
       overlay.querySelector('#modalConfirm').onclick = confirm;
       pwd1.onkeydown = (e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') close(); };
       if (pwd2) pwd2.onkeydown = (e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') close(); };
+    }
+
+    function showFullModal() {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal">
+          <div class="modal-icon">📭</div>
+          <h3>笔记空间已满</h3>
+          <p>当前已达到 ${MAX_NOTES} 篇笔记上限。<br/>如有更多笔记需求，请联系我们。</p>
+          <div class="modal-buttons">
+            <button class="modal-btn modal-btn-primary" id="fullModalOk">我知道了</button>
+          </div>
+        </div>
+      `;
+      app.appendChild(overlay);
+      overlay.querySelector('#fullModalOk').onclick = () => overlay.remove();
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
     }
 
     function renderModalRefresh() {
