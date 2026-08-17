@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HiNotes</title>
+  <title>Markdown 笔记</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
     if (window.marked && marked.setOptions) {
@@ -69,6 +69,19 @@
     }
     .storage-fill.warn { background: hsl(40, 80%, 50%); }
     .storage-fill.danger { background: hsl(0, 50%, 55%); }
+    .expand-btn {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      color: white;
+      background: hsl(25, 55%, 48%);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .expand-btn:hover { background: hsl(25, 55%, 42%); }
     .settings-link {
       display: flex; align-items: center; gap: 8px;
       padding: 8px 12px; border-radius: 6px; cursor: pointer;
@@ -426,11 +439,13 @@
     'use strict';
 
     // ===== 常量 =====
-    const STORAGE_KEYS = { TAGS: 'memo_app_tags', NOTES: 'memo_app_notes', ENC: 'memo_app_enc_config' };
+    const STORAGE_KEYS = { TAGS: 'memo_app_tags', NOTES: 'memo_app_notes', ENC: 'memo_app_enc_config', EXPANDED: 'memo_app_expanded' };
     const ENC_TAG_ID = 'tag-encrypted';
     const ENC_PREFIX = 'enc:v1:';
     const ENC_VERIFIER_TEXT = 'memo-encrypted-valid';
-    const MAX_NOTES = 100;
+    const DEFAULT_MAX_NOTES = 512;
+    const EXPANDED_MAX_NOTES = 5120;
+    const EXPAND_THRESHOLD = 308;
 
     // ===== 基础工具 =====
     function load(key, fallback) {
@@ -442,6 +457,8 @@
     function save(key, val) {
       try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
     }
+    let isExpanded = load(STORAGE_KEYS.EXPANDED, false);
+    function getMaxNotes() { return isExpanded ? EXPANDED_MAX_NOTES : DEFAULT_MAX_NOTES; }
     function uid(prefix) {
       return prefix + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
     }
@@ -745,9 +762,9 @@
         <div class="tag-list" id="tagList"></div>
         <div class="sidebar-footer">
           <div class="storage-info">
-            <div class="storage-text">☁️ 笔记本空间（${notes.length}/100篇）</div>
+            <div class="storage-text">☁️ 笔记本空间（${notes.length}/${getMaxNotes()}篇）${notes.length >= EXPAND_THRESHOLD && !isExpanded ? '<button class="expand-btn" id="expandBtn">免费扩容</button>' : ''}${isExpanded ? '<span style="color:hsl(140,50%,35%);"> · 已扩容</span>' : ''}</div>
             <div class="storage-bar">
-              <div class="storage-fill ${notes.length >= 90 ? 'danger' : notes.length >= 70 ? 'warn' : ''}" style="width: ${Math.min(notes.length, 100)}%"></div>
+              <div class="storage-fill ${notes.length >= getMaxNotes() * 0.9 ? 'danger' : notes.length >= getMaxNotes() * 0.7 ? 'warn' : ''}" style="width: ${Math.min(notes.length / getMaxNotes() * 100, 100)}%"></div>
             </div>
           </div>
           <a class="settings-link" href="settings.html" title="设置">⚙️ 设置</a>
@@ -756,6 +773,16 @@
       app.appendChild(sidebar);
 
       const tagList = sidebar.querySelector('#tagList');
+
+      const expandBtn = sidebar.querySelector('#expandBtn');
+      if (expandBtn) {
+        expandBtn.onclick = (e) => {
+          e.stopPropagation();
+          isExpanded = true;
+          save(STORAGE_KEYS.EXPANDED, true);
+          render();
+        };
+      }
 
       // 全部
       const allItem = document.createElement('div');
@@ -919,7 +946,7 @@
           <div class="note-list-header">
             <div class="note-list-title">
               <h2>${activeTagId === ENC_TAG_ID ? '🔓 加密笔记本' : '备忘录'}</h2>
-              <button class="add-btn" id="addNoteBtn" title="新建备忘录" ${(activeTagId === ENC_TAG_ID && !cryptoKey) || notes.length >= MAX_NOTES ? 'disabled' : ''}>+</button>
+              <button class="add-btn" id="addNoteBtn" title="新建备忘录" ${(activeTagId === ENC_TAG_ID && !cryptoKey) || notes.length >= getMaxNotes() ? 'disabled' : ''}>+</button>
             </div>
             <div class="search-wrapper">
               <input class="search-box" id="searchInput" placeholder="搜索备忘录..." value="${esc(searchQuery)}" />
@@ -931,7 +958,7 @@
 
         const noteItems = list.querySelector('#noteItems');
         list.querySelector('#addNoteBtn').onclick = () => {
-          if (notes.length >= MAX_NOTES) {
+          if (notes.length >= getMaxNotes()) {
             showFullModal();
             return;
           }
@@ -1179,7 +1206,7 @@
         <div class="modal">
           <div class="modal-icon">📭</div>
           <h3>笔记空间已满</h3>
-          <p>当前已达到 ${MAX_NOTES} 篇笔记上限。<br/>如有更多笔记需求，请联系我们。</p>
+          <p>当前已达到 ${getMaxNotes()} 篇笔记上限。<br/>如有更多笔记需求，请联系我们。</p>
           <div class="modal-buttons">
             <button class="modal-btn modal-btn-primary" id="fullModalOk">我知道了</button>
           </div>
