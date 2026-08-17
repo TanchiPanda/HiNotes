@@ -44,9 +44,31 @@
     .tag-list { flex: 1; overflow-y: auto; padding: 8px; }
     .sidebar-footer {
       border-top: 1px solid hsl(35, 15%, 88%);
-      padding: 6px 8px;
+      padding: 8px 12px;
       flex-shrink: 0;
     }
+    .storage-info {
+      margin-bottom: 6px;
+    }
+    .storage-text {
+      font-size: 11px;
+      color: hsl(30, 6%, 45%);
+      margin-bottom: 5px;
+    }
+    .storage-bar {
+      height: 4px;
+      background: hsl(35, 15%, 88%);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .storage-fill {
+      height: 100%;
+      background: hsl(25, 55%, 48%);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+    .storage-fill.warn { background: hsl(40, 80%, 50%); }
+    .storage-fill.danger { background: hsl(0, 50%, 55%); }
     .settings-link {
       display: flex; align-items: center; gap: 8px;
       padding: 8px 12px; border-radius: 6px; cursor: pointer;
@@ -721,6 +743,12 @@
         </div>
         <div class="tag-list" id="tagList"></div>
         <div class="sidebar-footer">
+          <div class="storage-info">
+            <div class="storage-text">☁️ 笔记本空间（${notes.length}/100篇）</div>
+            <div class="storage-bar">
+              <div class="storage-fill ${notes.length >= 90 ? 'danger' : notes.length >= 70 ? 'warn' : ''}" style="width: ${Math.min(notes.length, 100)}%"></div>
+            </div>
+          </div>
           <a class="settings-link" href="settings.html" title="设置">⚙️ 设置</a>
         </div>
       `;
