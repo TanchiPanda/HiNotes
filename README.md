@@ -1,4 +1,4 @@
-# 📒TanchiNotes - 开源的备忘录与笔记工具【Pre-release】
+# 📒贪吃的笔记 - 开源的备忘录与笔记工具【Pre-release】
 在线体验：https://tanchipanda.github.io/TanchiNotes/index.html
 
 ## 🕯️功能亮点
@@ -15,3 +15,5 @@
 免费版提供100篇永久免费篇数
 
 升级后，可获得更多额度（价格待定）。
+
+了解更多：https://github.com/TanchiPanda/TanchiNotes/blob/main/%E7%89%88%E6%9C%AC%E5%AF%B9%E6%AF%94.md
